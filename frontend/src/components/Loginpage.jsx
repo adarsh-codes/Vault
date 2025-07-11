@@ -38,6 +38,7 @@ const LoginPage = () => {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
+        credentials: "include",
       });
 
       const data = await res.json();
@@ -48,7 +49,6 @@ const LoginPage = () => {
       } else {
         login({ email });
         localStorage.setItem("accessToken", data.access_token);
-        localStorage.setItem("refreshToken", data.refresh_token);
         localStorage.setItem("masterPassword", password);
         setTimeout(() => {
           toast.success("Login successful!");
@@ -95,8 +95,8 @@ const LoginPage = () => {
             Securely store and manage all your passwords in one safe place.
           </Typography>
           <Typography variant="body1" sx={{ opacity: 0.9 }}>
-            With high-grade encryption and easy access, PassVault protects
-            your digital life - so you never forget a password again.
+            With high-grade encryption and easy access, PassVault protects your
+            digital life - so you never forget a password again.
           </Typography>
         </Box>
 

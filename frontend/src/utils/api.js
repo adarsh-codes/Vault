@@ -12,11 +12,9 @@ const authFetchWithRefresh = async (url, options = {}) => {
   let res = await fetch(url, options);
 
   if (res.status === 401) {
-    const refreshRes = await fetch("http://localhost:8000/auth/refresh-token", {
+    const refreshRes = await fetch("http://localhost:8000/auth/refresh", {
       method: "POST",
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem("refreshToken")}`,
-      },
+      credentials: "include",
     });
 
     if (refreshRes.ok) {
@@ -35,9 +33,6 @@ const authFetchWithRefresh = async (url, options = {}) => {
 
   return res;
 };
-
-
-
 
 export const getPasswords = async () => {
   const res = await authFetchWithRefresh(`${BASE_URL}/get-passwords`, {

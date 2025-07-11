@@ -171,7 +171,21 @@ async def login(db: AsyncSession, user: schemas.UserLogin) -> JSONResponse:
     refresh_token = utils.create_refresh_token({"sub": user.email})
     logger.info(f"Login Successful by {user.email}")
 
-    return JSONResponse(content={"message": "Login successful", "access_token": access_token, "refresh_token": refresh_token})
+    response = JSONResponse(content={
+        "message": "Login successful",
+        "access_token": access_token
+    })
+
+    response.set_cookie(
+        key="refresh_token",
+        value=refresh_token,
+        httponly=True,
+        secure=True,
+        samesite="Lax",
+        max_age=7 * 24 * 60 * 60,  # 7 days
+    )
+
+    return response
 
 
 async def store_reset_token(user_id: int, token: str, db: AsyncSession) -> None:

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 from fastapi.params import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from core.database import get_db
@@ -143,25 +143,21 @@ async def user_login(user: schemas.UserLogin, db: AsyncSession = Depends(get_db)
 
 
 @router.post("/refresh")
-async def refresh(data: schemas.Refresh, db: AsyncSession = Depends(get_db)):
-    """
-    Refresh the user's access token using a valid refresh token.
+async def refresh_token(request: Request):
+    refresh_token = request.cookies.get("refresh_token")
+    if not refresh_token:
+        raise HTTPException(status_code=401, detail="Refresh token missing")
 
-    Args:
-        data (schemas.Refresh): Object containing the refresh token.
-        db (AsyncSession): Database session dependency.
+    payload = utils.decode_token(refresh_token)
+    if not payload or payload.get("type") != "refresh":
+        raise HTTPException(status_code=403, detail="Invalid token")
 
-    Raises:
-        HTTPException: If the token is invalid or server error occurs.
+    access_token = utils.create_access_token({"sub": payload["sub"]})
 
-    Returns:
-        schemas.Token: A new access token and the existing refresh token.
-    """
-    try:
-        return utils.refresh_token(data=data)
-    except Exception as e:
-        logger.error(f"Internal server error: {e}")
-        raise HTTPException(status_code=500, detail="Invalid Token!")
+    return JSONResponse(content={
+        "access_token": access_token,
+        "token_type": "bearer"
+    })
 
 
 @router.post('/forgot-password', response_model=schemas.ResetTokenResponse)

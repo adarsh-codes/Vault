@@ -12,6 +12,7 @@ from passwords.routes import router as pass_router
 from core.error_response import format_error
 from core.logging_config import logger
 from core.dependencies import oauth2_scheme
+from core.config import settings
 
 
 @asynccontextmanager
@@ -21,10 +22,8 @@ async def lifespan(app: FastAPI):
     yield
 
 
-origins = [
-    "http://localhost:5173",
-    "https://your-frontend-domain.com"
-]
+origins = [f"{settings.URL}",
+           ]
 
 
 app = FastAPI(title="Pass-Vault", version="1.2", lifespan=lifespan)
@@ -111,7 +110,8 @@ def custom_openapi():
             if any(dep.dependencies == oauth2_scheme for dep in route.dependant.dependencies):
                 path = route.path
                 method = list(route.methods)[0].lower()
-                openapi_schema["paths"][path][method]["security"] = [{"OAuth2PasswordBearer": []}]
+                openapi_schema["paths"][path][method]["security"] = [
+                    {"OAuth2PasswordBearer": []}]
     app.openapi_schema = openapi_schema
     return app.openapi_schema
 
