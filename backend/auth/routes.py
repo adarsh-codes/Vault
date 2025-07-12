@@ -217,7 +217,7 @@ async def reset_password(data: schemas.ChangePassword, db: AsyncSession = Depend
             status_code=500, detail="Failed to change password.")
 
 
-@router.post("/auth/verify-master-password")
+@router.post("/verify-master-password")
 async def verify_master_password(
     data: schemas.MasterPasswordVerifyRequest,
     db: AsyncSession = Depends(get_db)
