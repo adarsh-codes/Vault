@@ -219,11 +219,12 @@ async def reset_password(data: schemas.ChangePassword, db: AsyncSession = Depend
 
 @router.post("/auth/verify-master-password")
 async def verify_master_password(
-    data: schemas.MasterPasswordVerifyRequest
+    data: schemas.MasterPasswordVerifyRequest,
+    db: AsyncSession = Depends(get_db)
 ):
     user_email = data.email
 
-    user = await crud.get_user_by_email(user_email)
+    user = await crud.get_user_by_email(email=user_email, db=db)
 
     if not user:
         raise HTTPException(status_code=404, detail="User not found")

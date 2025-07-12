@@ -53,7 +53,7 @@ const PasswordTableManager = () => {
   const [masterPasswordInput, setMasterPasswordInput] = useState("");
   const [unlocking, setUnlocking] = useState(false);
 
-  const { auth, setAuth } = useAuth(); // assume your context provides setAuth to update masterPassword
+  const { auth, setAuth } = useAuth(); 
 
   // fetch and decrypt passwords only when vault is unlocked
   const fetchAndDecryptPasswords = async (masterPassword) => {
@@ -115,7 +115,8 @@ const PasswordTableManager = () => {
 
     try {
       // Call backend to verify master password correctness
-      const result = await verifyMasterPassword(masterPasswordInput);
+      const email = localStorage.getItem("user");
+      const result = await verifyMasterPassword(email, masterPasswordInput);
 
       if (result.valid) {
         setVaultUnlocked(true);
