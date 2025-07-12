@@ -3,7 +3,7 @@ const API_URL = import.meta.env.VITE_API_URL;
 const BASE_URL = `${API_URL}/passwords`;
 
 export async function verifyMasterPassword(email, masterPassword) {
-  const res = await fetch(`${API_URL}/auth/auth/verify-master-password`, {
+  const res = await fetch(`${API_URL}/auth/verify-master-password`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email, masterPassword }),

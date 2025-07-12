@@ -53,58 +53,56 @@ const PasswordTableManager = () => {
   const [masterPasswordInput, setMasterPasswordInput] = useState("");
   const [unlocking, setUnlocking] = useState(false);
 
-  const { auth, setAuth } = useAuth(); 
+  const { auth, setMasterPassword } = useAuth();
 
-  // fetch and decrypt passwords only when vault is unlocked
   const fetchAndDecryptPasswords = async (masterPassword) => {
     try {
+      console.log("Fetching passwords...");
       const rawPasswords = await getPasswords();
+      console.log("Raw passwords from API:", rawPasswords);
 
       if (!masterPassword) {
         toast.error("Master password missing.");
         return;
       }
 
-      // Decrypt all passwords using the provided master password
       const decrypted = await Promise.all(
         rawPasswords.map(async (item) => {
-          let decryptedPwd = "";
           try {
-            decryptedPwd = await decryptPassword(
+            const decryptedPwd = await decryptPassword(
               masterPassword,
               item.encrypted_password,
               item.salt,
               item.iv
             );
+            console.log(`Decrypted password for ${item.website}:`, decryptedPwd);
+            return { ...item, decrypted_password: decryptedPwd };
           } catch (e) {
             console.error("Decryption error for", item.website, e);
-            decryptedPwd = "Error decrypting";
+            return { ...item, decrypted_password: "Error decrypting" };
           }
-          return { ...item, decrypted_password: decryptedPwd };
         })
       );
 
       setPasswords(decrypted);
     } catch (err) {
+      console.error("Error fetching or decrypting passwords:", err);
       toast.error("Error fetching or decrypting passwords.");
     }
   };
 
-  // On mount, check if logged in but vault not unlocked => show unlock dialog
   useEffect(() => {
+    console.log("Auth context:", auth);
     if (auth.isLoggedIn) {
       if (auth.masterPassword) {
-        // vault already unlocked (from context)
         setVaultUnlocked(true);
         fetchAndDecryptPasswords(auth.masterPassword);
       } else {
-        // vault locked, ask for master password
         setVaultUnlocked(false);
       }
     }
   }, [auth.isLoggedIn, auth.masterPassword]);
 
-  // Unlock vault handler
   const handleUnlockVault = async () => {
     if (!masterPasswordInput) {
       toast.error("Please enter master password");
@@ -114,25 +112,25 @@ const PasswordTableManager = () => {
     setUnlocking(true);
 
     try {
-      // Call backend to verify master password correctness
       const email = localStorage.getItem("user");
       const result = await verifyMasterPassword(email, masterPasswordInput);
 
       if (result.valid) {
         setVaultUnlocked(true);
-        setAuth((prev) => ({ ...prev, masterPassword: masterPasswordInput }));
+        setMasterPassword(masterPasswordInput);
         toast.success("Vault unlocked!");
         await fetchAndDecryptPasswords(masterPasswordInput);
       } else {
         toast.error("Master password incorrect.");
       }
     } catch (err) {
+      console.error("Failed to verify master password:", err);
       toast.error("Failed to verify master password.");
     }
 
     setUnlocking(false);
   };
-  // Password dialog handlers etc remain unchanged...
+
 
   const handleOpenDialog = (index = null) => {
     if (!vaultUnlocked) {
@@ -191,7 +189,6 @@ const PasswordTableManager = () => {
         await addPassword(payload);
       }
 
-      // Pass masterPassword explicitly here to avoid missing password error
       await fetchAndDecryptPasswords(masterPassword);
 
       handleCloseDialog();
@@ -201,6 +198,7 @@ const PasswordTableManager = () => {
           : "Password added successfully!"
       );
     } catch (err) {
+      console.error("Error saving password:", err);
       toast.error("Error saving password: " + (err.message || err));
     }
   };
@@ -211,6 +209,7 @@ const PasswordTableManager = () => {
       await deletePassword(password.id);
       await fetchAndDecryptPasswords(auth.masterPassword);
     } catch (err) {
+      console.error("Error deleting password:", err);
       toast.error("Error deleting password: " + (err.message || err));
     }
   };
@@ -228,7 +227,6 @@ const PasswordTableManager = () => {
     setShowPassword((prev) => ({ ...prev, [index]: !prev[index] }));
   };
 
-  // If not logged in, optionally show "Please login first" or redirect
 
   if (!auth.isLoggedIn) {
     return (
@@ -240,7 +238,6 @@ const PasswordTableManager = () => {
     );
   }
 
-  // If vault locked, show unlock vault dialog only
 
   if (!vaultUnlocked) {
     return (
@@ -275,7 +272,6 @@ const PasswordTableManager = () => {
     );
   }
 
-  // Vault unlocked: show normal password manager UI
 
   return (
     <Box sx={{ p: 4 }}>
