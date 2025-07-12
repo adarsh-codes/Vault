@@ -45,6 +45,12 @@ class Token(BaseModel):
     type: str
 
 
+class MasterPasswordVerifyRequest(BaseModel):
+    email: EmailStr = Field(..., description="Give a valid email address")
+    masterPassword: str = Field(..., min_length=8, max_length=40,
+                                description="Master password for verification")
+
+
 class VerifyPass(BaseModel):
     email: EmailStr = Field(..., description="Give a valid email address")
     otp: str

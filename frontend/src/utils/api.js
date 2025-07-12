@@ -1,4 +1,19 @@
-const BASE_URL = "http://localhost:8000/passwords";
+const API_URL = import.meta.env.VITE_API_URL;
+
+const BASE_URL = `${API_URL}/passwords`;
+
+export async function verifyMasterPassword(masterPassword) {
+  const API_URL = import.meta.env.VITE_API_URL;
+  const res = await fetch(`${API_URL}/auth/verify-master-password`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ masterPassword }),
+    credentials: "include",
+  });
+  if (!res.ok) throw new Error("Verification request failed");
+  return res.json();
+}
+
 
 const authFetchWithRefresh = async (url, options = {}) => {
   const token = localStorage.getItem("accessToken");
@@ -12,7 +27,7 @@ const authFetchWithRefresh = async (url, options = {}) => {
   let res = await fetch(url, options);
 
   if (res.status === 401) {
-    const refreshRes = await fetch("http://localhost:8000/auth/refresh", {
+    const refreshRes = await fetch(`${API_URL}/auth/refresh`, {
       method: "POST",
       credentials: "include",
     });
@@ -25,7 +40,6 @@ const authFetchWithRefresh = async (url, options = {}) => {
       res = await fetch(url, options);
     } else {
       localStorage.removeItem("accessToken");
-      localStorage.removeItem("refreshToken");
       window.location.href = "/login";
       throw new Error("Session expired. Please log in again.");
     }

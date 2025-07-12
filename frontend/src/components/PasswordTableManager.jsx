@@ -31,9 +31,11 @@ import {
   addPassword,
   updatePassword,
   deletePassword,
+  verifyMasterPassword,
 } from "../utils/api";
 import { encryptPassword, decryptPassword } from "../utils/encryption";
 import { toast } from "react-toastify";
+import { useAuth } from "../AuthContext";
 
 const PasswordTableManager = () => {
   const [passwords, setPasswords] = useState([]);
@@ -47,15 +49,23 @@ const PasswordTableManager = () => {
   const [editIndex, setEditIndex] = useState(null);
   const [showPassword, setShowPassword] = useState({});
 
-  const fetchAndDecryptPasswords = async () => {
+  const [vaultUnlocked, setVaultUnlocked] = useState(false);
+  const [masterPasswordInput, setMasterPasswordInput] = useState("");
+  const [unlocking, setUnlocking] = useState(false);
+
+  const { auth, setAuth } = useAuth(); // assume your context provides setAuth to update masterPassword
+
+  // fetch and decrypt passwords only when vault is unlocked
+  const fetchAndDecryptPasswords = async (masterPassword) => {
     try {
       const rawPasswords = await getPasswords();
-      const masterPassword = localStorage.getItem("masterPassword");
+
       if (!masterPassword) {
-        toast.error("Master password not set.");
+        toast.error("Master password missing.");
         return;
       }
 
+      // Decrypt all passwords using the provided master password
       const decrypted = await Promise.all(
         rawPasswords.map(async (item) => {
           let decryptedPwd = "";
@@ -67,6 +77,7 @@ const PasswordTableManager = () => {
               item.iv
             );
           } catch (e) {
+            console.error("Decryption error for", item.website, e);
             decryptedPwd = "Error decrypting";
           }
           return { ...item, decrypted_password: decryptedPwd };
@@ -75,15 +86,59 @@ const PasswordTableManager = () => {
 
       setPasswords(decrypted);
     } catch (err) {
-      toast.error("Error fetching or decrypting:", err);
+      toast.error("Error fetching or decrypting passwords.");
     }
   };
 
+  // On mount, check if logged in but vault not unlocked => show unlock dialog
   useEffect(() => {
-    fetchAndDecryptPasswords();
-  }, []);
+    if (auth.isLoggedIn) {
+      if (auth.masterPassword) {
+        // vault already unlocked (from context)
+        setVaultUnlocked(true);
+        fetchAndDecryptPasswords(auth.masterPassword);
+      } else {
+        // vault locked, ask for master password
+        setVaultUnlocked(false);
+      }
+    }
+  }, [auth.isLoggedIn, auth.masterPassword]);
+
+  // Unlock vault handler
+  const handleUnlockVault = async () => {
+    if (!masterPasswordInput) {
+      toast.error("Please enter master password");
+      return;
+    }
+
+    setUnlocking(true);
+
+    try {
+      // Call backend to verify master password correctness
+      const result = await verifyMasterPassword(masterPasswordInput);
+
+      if (result.valid) {
+        setVaultUnlocked(true);
+        setAuth((prev) => ({ ...prev, masterPassword: masterPasswordInput }));
+        toast.success("Vault unlocked!");
+        await fetchAndDecryptPasswords(masterPasswordInput);
+      } else {
+        toast.error("Master password incorrect.");
+      }
+    } catch (err) {
+      toast.error("Failed to verify master password.");
+    }
+
+    setUnlocking(false);
+  };
+  // Password dialog handlers etc remain unchanged...
 
   const handleOpenDialog = (index = null) => {
+    if (!vaultUnlocked) {
+      toast.error("Unlock vault first!");
+      return;
+    }
+
     if (index !== null) {
       const item = passwords[index];
       setForm({
@@ -107,10 +162,15 @@ const PasswordTableManager = () => {
   };
 
   const handleSave = async () => {
+    if (!vaultUnlocked) {
+      toast.error("Unlock vault first!");
+      return;
+    }
+
     try {
-      const masterPassword = localStorage.getItem("masterPassword");
+      const masterPassword = auth.masterPassword;
       if (!masterPassword) {
-        toast.error("Master password is required.");
+        toast.error("Something went wrong.");
         return;
       }
 
@@ -130,13 +190,17 @@ const PasswordTableManager = () => {
         await addPassword(payload);
       }
 
-      await fetchAndDecryptPasswords();
+      // Pass masterPassword explicitly here to avoid missing password error
+      await fetchAndDecryptPasswords(masterPassword);
+
       handleCloseDialog();
       toast.success(
-        editIndex !== null ? "Password updated successfully!" : "Password added successfully!"
+        editIndex !== null
+          ? "Password updated successfully!"
+          : "Password added successfully!"
       );
     } catch (err) {
-      toast.error("Error saving password:", err);
+      toast.error("Error saving password: " + (err.message || err));
     }
   };
 
@@ -144,19 +208,73 @@ const PasswordTableManager = () => {
     try {
       const password = passwords[index];
       await deletePassword(password.id);
-      await fetchAndDecryptPasswords();
+      await fetchAndDecryptPasswords(auth.masterPassword);
     } catch (err) {
-      toast.error("Error deleting password:", err);
+      toast.error("Error deleting password: " + (err.message || err));
     }
   };
 
-  const handleCopy = (text) => {
-    navigator.clipboard.writeText(text);
+  const handleCopy = async (text) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      toast.success("Copied to clipboard");
+    } catch {
+      toast.error("Failed to copy");
+    }
   };
 
   const togglePasswordVisibility = (index) => {
     setShowPassword((prev) => ({ ...prev, [index]: !prev[index] }));
   };
+
+  // If not logged in, optionally show "Please login first" or redirect
+
+  if (!auth.isLoggedIn) {
+    return (
+      <Box sx={{ p: 4 }}>
+        <Typography variant="h6" color="error">
+          Please login to view your passwords.
+        </Typography>
+      </Box>
+    );
+  }
+
+  // If vault locked, show unlock vault dialog only
+
+  if (!vaultUnlocked) {
+    return (
+      <Dialog open fullWidth maxWidth="xs" disableEscapeKeyDown>
+        <DialogTitle>Unlock Vault</DialogTitle>
+        <DialogContent
+          sx={{ display: "flex", flexDirection: "column", gap: 2, mt: 1 }}
+        >
+          <Typography>
+            Enter your master password to unlock your vault and decrypt your
+            saved passwords.
+          </Typography>
+          <TextField
+            label="Master Password"
+            type="password"
+            value={masterPasswordInput}
+            onChange={(e) => setMasterPasswordInput(e.target.value)}
+            fullWidth
+            autoFocus
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={handleUnlockVault}
+            disabled={unlocking}
+            variant="contained"
+          >
+            {unlocking ? "Unlocking..." : "Unlock"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+    );
+  }
+
+  // Vault unlocked: show normal password manager UI
 
   return (
     <Box sx={{ p: 4 }}>

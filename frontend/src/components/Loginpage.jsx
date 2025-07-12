@@ -6,27 +6,26 @@ import {
   Paper,
   TextField,
   Typography,
-  Checkbox,
   Button,
   Grid,
   Link,
-  FormControlLabel,
 } from "@mui/material";
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
-import { Link as RouterLink, useNavigate } from "react-router-dom";
+import { Link as RouterLink, useNavigate, Navigate } from "react-router-dom";
 import { useAuth } from "../AuthContext";
-import { Navigate } from "react-router-dom";
 import { toast } from "react-toastify";
 
 const LoginPage = () => {
   const navigate = useNavigate();
-  const { login } = useAuth();
-  const { auth } = useAuth();
+  const { login, auth } = useAuth();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  const API_URL = import.meta.env.VITE_API_URL;
+  const url = `${API_URL}/auth`;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -34,7 +33,7 @@ const LoginPage = () => {
     setError("");
 
     try {
-      const res = await fetch("http://127.0.0.1:8000/auth/signin", {
+      const res = await fetch(`${url}/signin`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
@@ -44,15 +43,20 @@ const LoginPage = () => {
       const data = await res.json();
 
       if (!res.ok) {
-        toast.error("Login failed");
-        setError("Email/Password is incorrect.");
+        toast.error(data.message || "Login failed");
+        setError(data.message || "Email/Password is incorrect.");
       } else {
-        login({ email });
+        login({ email, masterPassword: password });
+
         localStorage.setItem("accessToken", data.access_token);
-        localStorage.setItem("masterPassword", password);
+        localStorage.setItem("user", email);
+
+        setPassword(""); 
+
         setTimeout(() => {
           toast.success("Login successful!");
         }, 1);
+
         navigate("/home");
       }
     } catch (err) {

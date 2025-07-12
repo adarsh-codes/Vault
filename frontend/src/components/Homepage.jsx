@@ -1,4 +1,4 @@
-import {React, useRef} from "react";
+import { React, useRef } from "react";
 import TopBar from "./TopBar.jsx";
 import { Container, Box } from "@mui/material";
 import AboutPage from "./AboutPage.jsx";
@@ -37,9 +37,10 @@ const Homepage = () => {
         <div ref={passwordsRef}>
           <PasswordTableManager />
         </div>
-         <ToastContainer 
+      </Box>
+      <ToastContainer
         position="top-right"
-        autoClose={1500} 
+        autoClose={1500}
         hideProgressBar={false}
         newestOnTop={false}
         closeOnClick
@@ -47,7 +48,6 @@ const Homepage = () => {
         draggable
         pauseOnFocusLoss
       />
-      </Box>
     </>
   );
 };

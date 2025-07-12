@@ -21,6 +21,8 @@ const ForgotPass = () => {
   const [loading, setLoading] = useState(false);
   const [passwordUpdated, setPasswordUpdated] = useState(false);
 
+  const API_URL = import.meta.env.VITE_API_URL;
+
   const handleSendOtp = async () => {
     if (!email) return setMessage("Please enter your email");
 
@@ -28,7 +30,7 @@ const ForgotPass = () => {
     setMessage("");
 
     try {
-      const res = await fetch("http://127.0.0.1:8000/auth/request-otp", {
+      const res = await fetch(`${API_URL}/auth/request-otp`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
@@ -71,7 +73,7 @@ const ForgotPass = () => {
     setMessage("");
 
     try {
-      const res = await fetch("http://127.0.0.1:8000/auth/verify-pass", {
+      const res = await fetch(`${API_URL}/auth/verify-pass`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, otp, new_password: newPassword }),

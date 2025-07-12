@@ -3,7 +3,8 @@ import { Box, TextField, Button, Typography } from "@mui/material";
 import {toast} from "react-toastify";
 
 export const EmailWithOtpVerify = ({ email, setEmail, setisVerified }) => {
-  const url = "http://127.0.0.1:8000/auth";
+  const API_URL = import.meta.env.VITE_API_URL;
+  const url = `${API_URL}/auth`;
 
   const [otpVisible, setOtpVisible] = useState(false);
   const [otp, setOtp] = useState("");
@@ -35,7 +36,7 @@ export const EmailWithOtpVerify = ({ email, setEmail, setisVerified }) => {
   };
 
   const handleVerifyOtp = async () => {
-    if (otp.length <= 6) {
+    if (otp.length < 6) {
       toast.error("Please enter a 6-digit OTP.");
       setMessage("Please enter a 6-digit OTP.");
       return;

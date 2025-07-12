@@ -52,13 +52,15 @@ async def verify_pass(data: schemas.VerifyPass, db: AsyncSession = Depends(get_d
     try:
         return await crud.verify_update_pass(data=data, db=db)
     except InvalidCredentials as e:
-        raise HTTPException(status_code=404, detail=f"Email not registered: {e}")
+        raise HTTPException(
+            status_code=404, detail=f"Email not registered: {e}")
     except PasswordPattern as e:
         logger.warning(f"{e}")
         raise HTTPException(status_code=400, detail=f"{e}")
     except Exception as e:
         logger.error(f"Internal server error: {e}")
-        raise HTTPException(status_code=500, detail="Failed to verify password.")
+        raise HTTPException(
+            status_code=500, detail="Failed to verify password.")
 
 
 @router.post('/verify-otp', response_model=schemas.MessageResponse)
@@ -107,7 +109,8 @@ async def add_user(user: schemas.UserCreate, db: AsyncSession = Depends(get_db))
         return await crud.create_user(db, user)
     except UserAlreadyExists as e:
         logger.warning(f"[SIGNUP] User already exists: {e}")
-        raise HTTPException(status_code=400, detail="Email already registered. Please login.")
+        raise HTTPException(
+            status_code=400, detail="Email already registered. Please login.")
     except PasswordPattern as e:
         logger.warning(f"[SIGNUP]: {e}")
         raise HTTPException(status_code=422, detail=f"{e}")
@@ -178,10 +181,12 @@ async def send_email(data: schemas.ForgotPassword, db: AsyncSession = Depends(ge
     try:
         return await crud.send_mail(data=data, db=db)
     except InvalidCredentials as e:
-        raise HTTPException(status_code=404, detail=f"Failed to send mail to user : {e}")
+        raise HTTPException(
+            status_code=404, detail=f"Failed to send mail to user : {e}")
     except Exception as e:
         logger.error(f"Internal server error: {e}")
-        raise HTTPException(status_code=500, detail="Failed to send mail to user.")
+        raise HTTPException(
+            status_code=500, detail="Failed to send mail to user.")
 
 
 @router.post('/reset-password', response_model=schemas.MessageResponse, description="Reset your password!")
@@ -208,4 +213,24 @@ async def reset_password(data: schemas.ChangePassword, db: AsyncSession = Depend
         raise HTTPException(status_code=400, detail=f"{e}")
     except Exception as e:
         logger.error(f"Internal server error: {e}")
-        raise HTTPException(status_code=500, detail="Failed to change password.")
+        raise HTTPException(
+            status_code=500, detail="Failed to change password.")
+
+
+@router.post("/auth/verify-master-password")
+async def verify_master_password(
+    data: schemas.MasterPasswordVerifyRequest
+):
+    user_email = data.email
+
+    user = await crud.get_user_by_email(user_email)
+
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    ver = utils.verify_password(data.masterPassword, user.hashed_password)
+
+    if ver:
+        return {"valid": True}
+    else:
+        return {"valid": False}
