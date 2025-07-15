@@ -22,11 +22,7 @@ import {
 import { Visibility, VisibilityOff } from "@mui/icons-material";
 import { InputAdornment } from "@mui/material";
 
-import {
-  Edit,
-  Delete,
-  ContentCopy,
-} from "@mui/icons-material";
+import { Edit, Delete, ContentCopy } from "@mui/icons-material";
 import {
   getPasswords,
   addPassword,
@@ -48,7 +44,7 @@ const PasswordTableManager = () => {
     password: "",
   });
   const [editIndex, setEditIndex] = useState(null);
-  const [showPassword, setShowPassword] = useState({edit: false});
+  const [showPassword, setShowPassword] = useState({ edit: false });
 
   const [vaultUnlocked, setVaultUnlocked] = useState(false);
   const [masterPasswordInput, setMasterPasswordInput] = useState("");
@@ -381,25 +377,22 @@ const PasswordTableManager = () => {
             value={form.password}
             onChange={(e) => setForm({ ...form, password: e.target.value })}
             fullWidth
-            slots={{ input: "input" }}
-            slotProps={{
-              input: {
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <IconButton
-                      onClick={() =>
-                        setShowPassword((prev) => ({
-                          ...prev,
-                          edit: !prev.edit,
-                        }))
-                      }
-                      edge="end"
-                    >
-                      {showPassword.edit ? <VisibilityOff /> : <Visibility />}
-                    </IconButton>
-                  </InputAdornment>
-                ),
-              },
+            InputProps={{
+              endAdornment: (
+                <InputAdornment position="end">
+                  <IconButton
+                    onClick={() =>
+                      setShowPassword((prev) => ({
+                        ...prev,
+                        edit: !prev.edit,
+                      }))
+                    }
+                    edge="end"
+                  >
+                    {showPassword.edit ? <VisibilityOff /> : <Visibility />}
+                  </IconButton>
+                </InputAdornment>
+              ),
             }}
           />
         </DialogContent>
