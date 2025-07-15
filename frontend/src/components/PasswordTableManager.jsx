@@ -19,11 +19,12 @@ import {
   TableContainer,
   Stack,
 } from "@mui/material";
+import { Visibility, VisibilityOff } from "@mui/icons-material";
+import { InputAdornment } from "@mui/material";
+
 import {
   Edit,
   Delete,
-  Visibility,
-  VisibilityOff,
   ContentCopy,
 } from "@mui/icons-material";
 import {
@@ -47,7 +48,7 @@ const PasswordTableManager = () => {
     password: "",
   });
   const [editIndex, setEditIndex] = useState(null);
-  const [showPassword, setShowPassword] = useState({});
+  const [showPassword, setShowPassword] = useState({edit: false});
 
   const [vaultUnlocked, setVaultUnlocked] = useState(false);
   const [masterPasswordInput, setMasterPasswordInput] = useState("");
@@ -57,9 +58,7 @@ const PasswordTableManager = () => {
 
   const fetchAndDecryptPasswords = async (masterPassword) => {
     try {
-      console.log("Fetching passwords...");
       const rawPasswords = await getPasswords();
-      console.log("Raw passwords from API:", rawPasswords);
 
       if (!masterPassword) {
         toast.error("Master password missing.");
@@ -75,7 +74,10 @@ const PasswordTableManager = () => {
               item.salt,
               item.iv
             );
-            console.log(`Decrypted password for ${item.website}:`, decryptedPwd);
+            console.log(
+              `Decrypted password for ${item.website}:`,
+              decryptedPwd
+            );
             return { ...item, decrypted_password: decryptedPwd };
           } catch (e) {
             console.error("Decryption error for", item.website, e);
@@ -92,7 +94,6 @@ const PasswordTableManager = () => {
   };
 
   useEffect(() => {
-    console.log("Auth context:", auth);
     if (auth.isLoggedIn) {
       if (auth.masterPassword) {
         setVaultUnlocked(true);
@@ -130,7 +131,6 @@ const PasswordTableManager = () => {
 
     setUnlocking(false);
   };
-
 
   const handleOpenDialog = (index = null) => {
     if (!vaultUnlocked) {
@@ -198,7 +198,6 @@ const PasswordTableManager = () => {
           : "Password added successfully!"
       );
     } catch (err) {
-      console.error("Error saving password:", err);
       toast.error("Error saving password: " + (err.message || err));
     }
   };
@@ -227,7 +226,6 @@ const PasswordTableManager = () => {
     setShowPassword((prev) => ({ ...prev, [index]: !prev[index] }));
   };
 
-
   if (!auth.isLoggedIn) {
     return (
       <Box sx={{ p: 4 }}>
@@ -237,7 +235,6 @@ const PasswordTableManager = () => {
       </Box>
     );
   }
-
 
   if (!vaultUnlocked) {
     return (
@@ -271,7 +268,6 @@ const PasswordTableManager = () => {
       </Dialog>
     );
   }
-
 
   return (
     <Box sx={{ p: 4 }}>
@@ -381,10 +377,30 @@ const PasswordTableManager = () => {
           />
           <TextField
             label="Password"
-            type="text"
+            type={showPassword.edit ? "text" : "password"}
             value={form.password}
             onChange={(e) => setForm({ ...form, password: e.target.value })}
             fullWidth
+            slots={{ input: "input" }}
+            slotProps={{
+              input: {
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      onClick={() =>
+                        setShowPassword((prev) => ({
+                          ...prev,
+                          edit: !prev.edit,
+                        }))
+                      }
+                      edge="end"
+                    >
+                      {showPassword.edit ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              },
+            }}
           />
         </DialogContent>
         <DialogActions>

@@ -72,7 +72,7 @@ const SignupPage = () => {
     }
   };
 
-  if (auth.isLoggedIn) return <Navigate to="/home" />;
+  if (auth.isLoggedIn) return <Navigate to="/" />;
 
   return (
     <Container maxWidth="md" sx={{ mt: 8 }}>

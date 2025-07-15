@@ -57,7 +57,7 @@ const LoginPage = () => {
           toast.success("Login successful!");
         }, 1);
 
-        navigate("/home");
+        navigate("/");
       }
     } catch (err) {
       toast.error("Network error. Please try again later.");
@@ -67,7 +67,7 @@ const LoginPage = () => {
     }
   };
 
-  if (auth.isLoggedIn) return <Navigate to="/home" />;
+  if (auth.isLoggedIn) return <Navigate to="/" />;
 
   return (
     <Container maxWidth="md" sx={{ mt: 8 }}>

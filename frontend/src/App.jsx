@@ -17,7 +17,6 @@ function App() {
     <>
       <Routes>
         <Route path="/" element={auth.isLoggedIn ? <Homepage/> :<Loginpage/>}/>
-        <Route path="/home" element={auth.isLoggedIn? <Homepage/>: <Loginpage/>}/>
         <Route path="/login" element={auth.isLoggedIn? <Homepage/>: <Loginpage/>}/>
         <Route path="/register" element={<SignupPage/>}/>
         <Route path="/forgot" element={<ForgotPass/>}/>

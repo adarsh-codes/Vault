@@ -38,16 +38,6 @@ const Homepage = () => {
           <PasswordTableManager />
         </div>
       </Box>
-      <ToastContainer
-        position="top-right"
-        autoClose={1500}
-        hideProgressBar={false}
-        newestOnTop={false}
-        closeOnClick
-        pauseOnHover
-        draggable
-        pauseOnFocusLoss
-      />
     </>
   );
 };
